@@ -4,6 +4,7 @@ import com.mvsaude.clinic.dto.ConsultaDTO;
 import com.mvsaude.clinic.exception.BusinessException;
 import com.mvsaude.clinic.model.Consulta;
 import com.mvsaude.clinic.repository.ConsultaRepository;
+import com.mvsaude.clinic.repository.MedicoBloqueioRepository;
 import com.mvsaude.clinic.repository.MedicoRepository;
 import com.mvsaude.clinic.repository.PacienteRepository;
 import lombok.RequiredArgsConstructor;
@@ -19,6 +20,7 @@ public class ConsultaService {
     private final ConsultaRepository repo;
     private final PacienteRepository pacienteRepo;
     private  final MedicoRepository medicoRepo;
+    private final MedicoBloqueioRepository bloqueioRepo;
 
     public List<ConsultaDTO> listar() {
         return repo.findAll().stream().map(this::toDTO).toList();
@@ -34,11 +36,28 @@ public class ConsultaService {
 
     @Transactional
     public ConsultaDTO agendar(ConsultaDTO dto) {
-        var paciente = pacienteRepo.findById(dto.pacienteId()).orElseThrow(() -> new BusinessException("Paciente inexistente"));
-        var medico = medicoRepo.findById(dto.medicoId()).orElseThrow(() -> new BusinessException("Médico inexistente"));
-        if (dto.dataHora().isBefore(LocalDateTime.now())) throw  new BusinessException("Data/hora deve ser futura");
-        if (repo.existeConflito(medico.getId(), dto.dataHora())) throw new BusinessException("Médico já possui consulta nesse horário");
-        var c = Consulta.builder().dataHora(dto.dataHora()).paciente(paciente).medico(medico).status(Consulta.Status.AGENDADA).build();
+        var paciente = pacienteRepo.findById(dto.pacienteId())
+                .orElseThrow(() -> new BusinessException("Paciente inexistente"));
+
+        var medico = medicoRepo.findById(dto.medicoId())
+                .orElseThrow(() -> new BusinessException("Médico inexistente"));
+
+        if (dto.dataHora().isBefore(LocalDateTime.now()))
+            throw new BusinessException("Data/hora deve ser futura");
+
+        if (bloqueioRepo.existeBloqueio(medico.getId(), dto.dataHora()))
+            throw new BusinessException("Horário bloqueado para este médico");
+
+        if (repo.existeConflito(medico.getId(), dto.dataHora()))
+            throw new BusinessException("Médico já possui consulta nesse horário");
+
+        var c = Consulta.builder()
+                .dataHora(dto.dataHora())
+                .paciente(paciente)
+                .medico(medico)
+                .status(Consulta.Status.AGENDADA)
+                .build();
+
         return toDTO(repo.save(c));
     }
 
