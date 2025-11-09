@@ -38,7 +38,7 @@ public class ConsultaService {
         var medico = medicoRepo.findById(dto.medicoId()).orElseThrow(() -> new BusinessException("Médico inexistente"));
         if (dto.dataHora().isBefore(LocalDateTime.now())) throw  new BusinessException("Data/hora deve ser futura");
         if (repo.existeConflito(medico.getId(), dto.dataHora())) throw new BusinessException("Médico já possui consulta nesse horário");
-        var c = Consulta.builder().dataHora(dto.dataHora()).paciente(paciente).medico(medico).build();
+        var c = Consulta.builder().dataHora(dto.dataHora()).paciente(paciente).medico(medico).status(Consulta.Status.AGENDADA).build();
         return toDTO(repo.save(c));
     }
 
