@@ -17,5 +17,8 @@ public interface ConsultaRepository extends JpaRepository<Consulta, Long> {
 
     @Query("select count(c) > 0 from Consulta c where c.medico.id = :medicoId and c.dataHora = :dataHora and c.status <> 'CANCELADA'")
     boolean existeConflito(@Param("medicoId") Long medicoId, @Param("dataHora") LocalDateTime dataHora);
+
+    @Query("select c from Consulta c where c.paciente.id = :pacienteId order by c.dataHora desc")
+    List<Consulta> historicoPorPaciente(@Param("pacienteId") Long pacienteId);
 }
 

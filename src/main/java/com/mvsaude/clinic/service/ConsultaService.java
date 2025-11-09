@@ -60,6 +60,35 @@ public class ConsultaService {
         repo.save(c);
     }
 
+    @Transactional
+    public ConsultaDTO iniciarAtendimento(Long id) {
+        var c = repo.findById(id)
+                .orElseThrow(() -> new BusinessException("Consulta não encontrada"));
+        if (c.getStatus() != Consulta.Status.AGENDADA) {
+            throw new BusinessException("Só é possível iniciar consulta AGENDADAS");
+        }
+        c.setStatus(Consulta.Status.EM_ATENDIMENTO);
+        return toDTO(repo.save(c));
+    }
+
+    @Transactional
+    public ConsultaDTO concluir(Long id) {
+        var c = repo.findById(id)
+                .orElseThrow(() -> new BusinessException("Consulta não encontrada"));
+        if (c.getStatus() != Consulta.Status.EM_ATENDIMENTO) {
+            throw new BusinessException("Só é possível concluir consultas EM_ATENDIMENTO");
+        }
+        c.setStatus(Consulta.Status.CONCLUIDA);
+        return toDTO(repo.save(c));
+    }
+
+    public List<ConsultaDTO> historicoPaciente(Long pacienteId) {
+        return repo.historicoPorPaciente(pacienteId)
+                .stream()
+                .map(this::toDTO)
+                .toList();
+    }
+
     private ConsultaDTO toDTO(Consulta c) {
         return new ConsultaDTO(c.getId(), c.getDataHora(), c.getPaciente().getId(), c.getMedico().getId(), c.getStatus().name());
     }

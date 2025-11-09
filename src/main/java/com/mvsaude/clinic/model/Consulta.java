@@ -14,12 +14,19 @@ import java.time.LocalDateTime;
 @Builder
 public class Consulta {
 
+    public enum Status {
+        AGENDADA,
+        EM_ATENDIMENTO,
+        CONCLUIDA,
+        CANCELADA
+    }
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @NotNull
-    @Future           // opcional: garante data/hora futura
+    @Future
     @Column(nullable = false)
     private LocalDateTime dataHora;
 
@@ -33,8 +40,7 @@ public class Consulta {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    @Builder.Default
     private Status status = Status.AGENDADA;
 
-    public enum Status { AGENDADA, CONCLUIDA, CANCELADA }
+
 }

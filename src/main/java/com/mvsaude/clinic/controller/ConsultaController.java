@@ -31,9 +31,24 @@ public class ConsultaController {
         return service.porPaciente(pacienteId);
     }
 
+    @GetMapping("/paciente/{pacienteId}/historico")
+    public List<ConsultaDTO> historicoPaciente(@PathVariable Long pacienteId) {
+        return service.historicoPaciente(pacienteId);
+    }
+
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public ConsultaDTO agendar(@RequestBody @Valid ConsultaDTO dto) {
         return service.agendar(dto);
+    }
+
+    @PatchMapping("/{id}/iniciar")
+    public  ConsultaDTO iniciar(@PathVariable Long id) {
+        return service.iniciarAtendimento(id);
+    }
+
+    @PatchMapping("/{id}/concluir")
+    public ConsultaDTO concluir(@PathVariable Long id) {
+        return service.concluir(id);
     }
 }
