@@ -5,10 +5,12 @@ import com.mvsaude.clinic.service.ConsultaService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import javax.swing.plaf.PanelUI;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/consultas")
@@ -50,5 +52,11 @@ public class ConsultaController {
     @PatchMapping("/{id}/concluir")
     public ConsultaDTO concluir(@PathVariable Long id) {
         return service.concluir(id);
+    }
+
+    @PatchMapping("/{id}/status")
+    public ResponseEntity<ConsultaDTO> alterarStatus(@PathVariable Long id, @RequestBody Map<String, String> body) {
+        var novoStatus = body.get("status"); // "EM_ATENDIMENTO", "CONCLUIDA"...
+        return ResponseEntity.ok(service.alterarStatus(id, novoStatus));
     }
 }

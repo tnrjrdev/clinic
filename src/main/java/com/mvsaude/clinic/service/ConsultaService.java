@@ -17,10 +17,12 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 public class ConsultaService {
+
     private final ConsultaRepository repo;
     private final PacienteRepository pacienteRepo;
-    private  final MedicoRepository medicoRepo;
+    private final MedicoRepository medicoRepo;
     private final MedicoBloqueioRepository bloqueioRepo;
+    private final AuditoriaService auditoria;
 
     public List<ConsultaDTO> listar() {
         return repo.findAll().stream().map(this::toDTO).toList();
@@ -42,14 +44,17 @@ public class ConsultaService {
         var medico = medicoRepo.findById(dto.medicoId())
                 .orElseThrow(() -> new BusinessException("Médico inexistente"));
 
-        if (dto.dataHora().isBefore(LocalDateTime.now()))
+        if (dto.dataHora() == null || dto.dataHora().isBefore(LocalDateTime.now())) {
             throw new BusinessException("Data/hora deve ser futura");
+        }
 
-        if (bloqueioRepo.existeBloqueio(medico.getId(), dto.dataHora()))
+        if (bloqueioRepo.existeBloqueio(medico.getId(), dto.dataHora())) {
             throw new BusinessException("Horário bloqueado para este médico");
+        }
 
-        if (repo.existeConflito(medico.getId(), dto.dataHora()))
+        if (repo.existeConflito(medico.getId(), dto.dataHora())) {
             throw new BusinessException("Médico já possui consulta nesse horário");
+        }
 
         var c = Consulta.builder()
                 .dataHora(dto.dataHora())
@@ -58,18 +63,40 @@ public class ConsultaService {
                 .status(Consulta.Status.AGENDADA)
                 .build();
 
-        return toDTO(repo.save(c));
+        var salvo = repo.save(c);
+
+        auditoria.registrar(
+                "Consulta",
+                "AGENDAR",
+                "ConsultaId=" + salvo.getId() + ", medicoId=" + medico.getId() + ", pacienteId=" + paciente.getId() + ", dataHora=" + salvo.getDataHora()
+        );
+
+        return toDTO(salvo);
     }
 
     @Transactional
     public ConsultaDTO atualizar(Long id, ConsultaDTO dto) {
         var c = repo.findById(id).orElseThrow(() -> new BusinessException("Consulta não encontrada"));
-        if (dto.dataHora() !=null) {
-            if (dto.dataHora().isBefore(LocalDateTime.now())) throw new BusinessException("Data/hora deve ser futura");
-            if (repo.existeConflito(c.getMedico().getId(), dto.dataHora())) throw new BusinessException("Médico já possui consulta nesse horário");
+
+        if (dto.dataHora() != null) {
+            if (dto.dataHora().isBefore(LocalDateTime.now())) {
+                throw new BusinessException("Data/hora deve ser futura");
+            }
+            if (repo.existeConflito(c.getMedico().getId(), dto.dataHora())) {
+                throw new BusinessException("Médico já possui consulta nesse horário");
+            }
             c.setDataHora(dto.dataHora());
         }
-        return toDTO(repo.save(c));
+
+        var salvo = repo.save(c);
+
+        auditoria.registrar(
+                "Consulta",
+                "ATUALIZAR",
+                "ConsultaId=" + salvo.getId() + ", novoHorario=" + salvo.getDataHora()
+        );
+
+        return toDTO(salvo);
     }
 
     @Transactional
@@ -77,28 +104,62 @@ public class ConsultaService {
         var c = repo.findById(id).orElseThrow(() -> new BusinessException("Consulta não encontrada"));
         c.setStatus(Consulta.Status.CANCELADA);
         repo.save(c);
+
+        auditoria.registrar(
+                "Consulta",
+                "CANCELAR",
+                "ConsultaId=" + id
+        );
     }
 
     @Transactional
     public ConsultaDTO iniciarAtendimento(Long id) {
-        var c = repo.findById(id)
-                .orElseThrow(() -> new BusinessException("Consulta não encontrada"));
+        var c = repo.findById(id).orElseThrow(() -> new BusinessException("Consulta não encontrada"));
+
         if (c.getStatus() != Consulta.Status.AGENDADA) {
-            throw new BusinessException("Só é possível iniciar consulta AGENDADAS");
+            throw new BusinessException("Só é possível iniciar consultas AGENDADAS");
         }
+
         c.setStatus(Consulta.Status.EM_ATENDIMENTO);
-        return toDTO(repo.save(c));
+        var salvo = repo.save(c);
+
+        auditoria.registrar("Consulta", "INICIAR_ATENDIMENTO", "ConsultaId=" + id);
+
+        return toDTO(salvo);
     }
 
     @Transactional
     public ConsultaDTO concluir(Long id) {
-        var c = repo.findById(id)
-                .orElseThrow(() -> new BusinessException("Consulta não encontrada"));
+        var c = repo.findById(id).orElseThrow(() -> new BusinessException("Consulta não encontrada"));
+
         if (c.getStatus() != Consulta.Status.EM_ATENDIMENTO) {
             throw new BusinessException("Só é possível concluir consultas EM_ATENDIMENTO");
         }
+
         c.setStatus(Consulta.Status.CONCLUIDA);
-        return toDTO(repo.save(c));
+        var salvo = repo.save(c);
+
+        auditoria.registrar("Consulta", "CONCLUIR", "ConsultaId=" + id);
+
+        return toDTO(salvo);
+    }
+
+    @Transactional
+    public ConsultaDTO alterarStatus(Long id, String statusStr) {
+        var c = repo.findById(id).orElseThrow(() -> new BusinessException("Consulta não encontrada"));
+        Consulta.Status status;
+        try {
+            status = Consulta.Status.valueOf(statusStr);
+        } catch (IllegalArgumentException e) {
+            throw new BusinessException("Status inválido: " + statusStr);
+        }
+
+        c.setStatus(status);
+        var salvo = repo.save(c);
+
+        auditoria.registrar("Consulta", "ALTERAR_STATUS", "ConsultaId=" + id + ", novoStatus=" + status);
+
+        return toDTO(salvo);
     }
 
     public List<ConsultaDTO> historicoPaciente(Long pacienteId) {
@@ -109,6 +170,12 @@ public class ConsultaService {
     }
 
     private ConsultaDTO toDTO(Consulta c) {
-        return new ConsultaDTO(c.getId(), c.getDataHora(), c.getPaciente().getId(), c.getMedico().getId(), c.getStatus().name());
+        return new ConsultaDTO(
+                c.getId(),
+                c.getDataHora(),
+                c.getPaciente().getId(),
+                c.getMedico().getId(),
+                c.getStatus().name()
+        );
     }
 }
