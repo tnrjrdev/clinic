@@ -10,11 +10,11 @@ import java.time.LocalDateTime;
 public interface MedicoBloqueioRepository extends JpaRepository<MedicoBloqueio, Long> {
 
     @Query("""
-        select case when count(b) > 0 then true else false and
+        select (count(b) > 0)
         from MedicoBloqueio b
         where b.medico.id = :medicoId
           and :dataHora between b.inicio and b.fim
     """)
     boolean existeBloqueio(@Param("medicoId") Long medicoId,
-                           @Param("dataHora")LocalDateTime dataHora);
+                           @Param("dataHora") LocalDateTime dataHora);
 }

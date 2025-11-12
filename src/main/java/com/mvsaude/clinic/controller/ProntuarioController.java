@@ -18,9 +18,11 @@ public class ProntuarioController {
         return service.buscar(pacienteId);
     }
 
+    public record ProntuarioRequest(String anotacoes) {}
+
     @PutMapping
     public Prontuario salvar(@PathVariable Long pacienteId,
-                             @RequestBody String texto) {
-        return service.salvar(pacienteId, texto);
+                             @RequestBody ProntuarioRequest body) {
+        return service.salvar(pacienteId, body.anotacoes());
     }
 }
