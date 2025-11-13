@@ -11,7 +11,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.List;
 
 @Service
@@ -177,5 +179,27 @@ public class ConsultaService {
                 c.getMedico().getId(),
                 c.getStatus().name()
         );
+    }
+
+    public List<ConsultaDTO> consultasHojeRecepcao() {
+        LocalDate hoje = LocalDate.now();
+        var inicio = hoje.atStartOfDay();
+        var fim = hoje.atTime(LocalTime.MAX);
+
+        return repo.consultasDoDia(inicio, fim)
+                .stream()
+                .map(this::toDTO)
+                .toList();
+    }
+
+    public List<ConsultaDTO> consultaHojeMedico(Long medicoId) {
+        LocalDate hoje = LocalDate.now();
+        var inicio = hoje.atStartOfDay();
+        var fim = hoje.atTime(LocalTime.MAX);
+
+        return repo.consultasdoDiaPorMedico(medicoId, inicio, fim)
+                .stream()
+                .map(this::toDTO)
+                .toList();
     }
 }

@@ -20,5 +20,25 @@ public interface ConsultaRepository extends JpaRepository<Consulta, Long> {
 
     @Query("select c from Consulta c where c.paciente.id = :pacienteId order by c.dataHora desc")
     List<Consulta> historicoPorPaciente(@Param("pacienteId") Long pacienteId);
+
+    @Query("""
+            select c 
+            from Consulta c
+            where c.dataHora between :inicio and :fim
+            order by c.dataHora
+            """)
+    List<Consulta> consultasDoDia(@Param("inicio") LocalDateTime inicio,
+                                  @Param("fim") LocalDateTime fim);
+
+    @Query("""
+            select c
+            from Consulta c
+            where c.medico.id = :medicoId
+             and c.dataHora between :inicio and :fim
+            order by c.dataHora
+            """)
+    List<Consulta> consultasdoDiaPorMedico(@Param("medicoId") Long medicoId,
+                                          @Param("inicio") LocalDateTime inicio,
+                                          @Param("fim") LocalDateTime fim);
 }
 
