@@ -9,36 +9,59 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 public interface ConsultaRepository extends JpaRepository<Consulta, Long> {
-    @Query("select c from Consulta c where c.medico.id = :medicoId and c.dataHora >= :agora order by c.dataHora asc")
-    List<Consulta> futurasPorMedico(@Param("medicoId") Long medicoId, @Param("agora")LocalDateTime agora);
 
-    @Query("select c from Consulta c where c.paciente.id = :pacienteId order by c.dataHora desc")
+    @Query("""
+        select c from Consulta c 
+        where c.medico.id = :medicoId 
+          and c.dataHora >= :agora 
+        order by c.dataHora asc
+    """)
+    List<Consulta> futurasPorMedico(@Param("medicoId") Long medicoId,
+                                    @Param("agora") LocalDateTime agora);
+
+    @Query("""
+        select c from Consulta c 
+        where c.paciente.id = :pacienteId 
+        order by c.dataHora desc
+    """)
     List<Consulta> porPaciente(@Param("pacienteId") Long pacienteId);
 
-    @Query("select count(c) > 0 from Consulta c where c.medico.id = :medicoId and c.dataHora = :dataHora and c.status <> 'CANCELADA'")
-    boolean existeConflito(@Param("medicoId") Long medicoId, @Param("dataHora") LocalDateTime dataHora);
+    @Query("""
+        select count(c) > 0 
+        from Consulta c 
+        where c.medico.id = :medicoId 
+          and c.dataHora = :dataHora 
+          and c.status <> 'CANCELADA'
+    """)
+    boolean existeConflito(@Param("medicoId") Long medicoId,
+                           @Param("dataHora") LocalDateTime dataHora);
 
-    @Query("select c from Consulta c where c.paciente.id = :pacienteId order by c.dataHora desc")
+    @Query("""
+        select c from Consulta c 
+        where c.paciente.id = :pacienteId 
+        order by c.dataHora desc
+    """)
     List<Consulta> historicoPorPaciente(@Param("pacienteId") Long pacienteId);
 
+    // 🔹 Intervalo genérico (pra recepção, relatório, etc.)
     @Query("""
-            select c 
-            from Consulta c
-            where c.dataHora between :inicio and :fim
-            order by c.dataHora
-            """)
-    List<Consulta> consultasDoDia(@Param("inicio") LocalDateTime inicio,
+        select c
+        from Consulta c
+        where c.dataHora between :inicio and :fim
+        order by c.dataHora
+    """)
+    List<Consulta> consultasEntre(@Param("inicio") LocalDateTime inicio,
                                   @Param("fim") LocalDateTime fim);
 
+    // 🔹 Intervalo filtrado por médico (painel do médico)
     @Query("""
-            select c
-            from Consulta c
-            where c.medico.id = :medicoId
-             and c.dataHora between :inicio and :fim
-            order by c.dataHora
-            """)
-    List<Consulta> consultasdoDiaPorMedico(@Param("medicoId") Long medicoId,
-                                          @Param("inicio") LocalDateTime inicio,
-                                          @Param("fim") LocalDateTime fim);
+        select c
+        from Consulta c
+        where c.medico.id = :medicoId
+          and c.dataHora between :inicio and :fim
+        order by c.dataHora
+    """)
+    List<Consulta> consultasPorMedicoEntre(@Param("medicoId") Long medicoId,
+                                           @Param("inicio") LocalDateTime inicio,
+                                           @Param("fim") LocalDateTime fim);
 }
-

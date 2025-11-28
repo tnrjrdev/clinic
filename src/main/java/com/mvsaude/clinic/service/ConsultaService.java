@@ -31,7 +31,10 @@ public class ConsultaService {
     }
 
     public List<ConsultaDTO> futurasPorMedico(Long medicoId) {
-        return repo.futurasPorMedico(medicoId, LocalDateTime.now()).stream().map(this::toDTO).toList();
+        return repo.futurasPorMedico(medicoId, LocalDateTime.now())
+                .stream()
+                .map(this::toDTO)
+                .toList();
     }
 
     public List<ConsultaDTO> porPaciente(Long pacienteId) {
@@ -183,21 +186,22 @@ public class ConsultaService {
 
     public List<ConsultaDTO> consultasHojeRecepcao() {
         LocalDate hoje = LocalDate.now();
-        var inicio = hoje.atStartOfDay();
-        var fim = hoje.atTime(LocalTime.MAX);
+        LocalDateTime inicio = hoje.atStartOfDay();
+        LocalDateTime fim = hoje.atTime(LocalTime.MAX);
 
-        return repo.consultasDoDia(inicio, fim)
+        return repo.consultasEntre(inicio, fim)
                 .stream()
                 .map(this::toDTO)
                 .toList();
     }
 
+
     public List<ConsultaDTO> consultaHojeMedico(Long medicoId) {
         LocalDate hoje = LocalDate.now();
-        var inicio = hoje.atStartOfDay();
-        var fim = hoje.atTime(LocalTime.MAX);
+        LocalDateTime inicio = hoje.atStartOfDay();
+        LocalDateTime fim = hoje.atTime(LocalTime.MAX);
 
-        return repo.consultasdoDiaPorMedico(medicoId, inicio, fim)
+        return repo.consultasPorMedicoEntre(medicoId, inicio, fim)
                 .stream()
                 .map(this::toDTO)
                 .toList();

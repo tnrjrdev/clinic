@@ -16,8 +16,10 @@ public class Consulta {
 
     public enum Status {
         AGENDADA,
+        AGUARDANDO_ATENDIMENTO,
         EM_ATENDIMENTO,
         CONCLUIDA,
+        FINALIZADA,
         CANCELADA
     }
 
