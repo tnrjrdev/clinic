@@ -33,8 +33,6 @@ public class MedicoBloqueioController {
 
     @GetMapping
     public List<MedicoBloqueio> listar(@PathVariable Long medicoId) {
-        return repo.findAll().stream()
-                .filter(b -> b.getMedico().getId().equals(medicoId))
-                .toList();
+        return repo.findByMedicoId(medicoId);
     }
 }

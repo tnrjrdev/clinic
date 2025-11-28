@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 public interface MedicoBloqueioRepository extends JpaRepository<MedicoBloqueio, Long> {
 
@@ -17,4 +18,6 @@ public interface MedicoBloqueioRepository extends JpaRepository<MedicoBloqueio, 
     """)
     boolean existeBloqueio(@Param("medicoId") Long medicoId,
                            @Param("dataHora") LocalDateTime dataHora);
+
+    List<MedicoBloqueio> findByMedicoId(Long medicoId);
 }
