@@ -9,6 +9,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import java.util.List;
 
 @Service
@@ -19,8 +21,13 @@ public class PacienteService {
     private final ViaCepClient viaCepClient;
     private final AuditoriaService auditoria;
 
-    public List<PacienteDTO> listar() {
-        return repo.findAll().stream().map(this::toDTO).toList();
+    @Transactional(readOnly = true)
+    public Page<PacienteDTO> listar(String nome, Pageable pageable) {
+        if (nome == null || nome.isBlank()) {
+            return repo.findAll(pageable).map(this::toDTO);
+        }
+        return repo.findByNomeContainingIgnoreCase(nome, pageable)
+                .map(this::toDTO);
     }
 
     @Transactional(readOnly = true)

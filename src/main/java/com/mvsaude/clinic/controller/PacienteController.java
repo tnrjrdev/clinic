@@ -4,8 +4,14 @@ import com.mvsaude.clinic.dto.PacienteDTO;
 import com.mvsaude.clinic.service.PacienteService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
+
+import org.springframework.data.domain.Pageable;
+
+
 
 import java.util.List;
 
@@ -16,8 +22,11 @@ public class PacienteController {
     private final PacienteService service;
 
     @GetMapping
-    public List<PacienteDTO> listar() {
-        return service.listar();
+    public Page<PacienteDTO> listar(
+            @RequestParam(required = false) String nome,
+            @PageableDefault(size = 20, sort = "nome") Pageable pageable
+    ) {
+        return service.listar(nome, pageable);
     }
 
     @GetMapping("/{id}")
